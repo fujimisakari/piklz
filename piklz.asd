@@ -17,7 +17,7 @@
   :author "fujimisakari"
   :license "LLGPL"
   :depends-on (:bordeaux-threads
-               :clack
+               :clack-v1-compat
                :cl-ppcre
                :cl-fad
                :cl-annot)

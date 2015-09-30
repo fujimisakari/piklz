@@ -1,18 +1,22 @@
 (in-package :cl-user)
 (defpackage piklz.core.management.commands.runserver
-  (:use :cl)
+  (:use :cl
+        :clack
+        :clack.builder)
   (:import-from :piklz.core.management.base
                 :<base-command>)
+  (:import-from :piklz.core.handlers.clack
+                :<clack-handler>)
   (:import-from :piklz.conf
                 :*settings*)
   (:export :<command>
-           :handle
-           :hoge))
+           :handle))
 (in-package :piklz.core.management.commands.runserver)
-
 
 (defclass <command> (<base-command>)
   ())
 
 (defmethod handle ((this <command>) argv)
-  (format t "runserver ~a ~a" argv (getf *settings* :TIME_ZONE)))
+  (clack:clackup
+   (make-instance '<clack-handler>)
+   :use-thread nil))
