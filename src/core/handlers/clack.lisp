@@ -2,7 +2,8 @@
 (defpackage piklz.core.handlers.clack
   (:use :cl
         :clack
-        :clack.builder)
+        :clack.builder
+        :piklz.http.request)
   (:export :<clack-handler>))
 (in-package :piklz.core.handlers.clack)
 
@@ -10,10 +11,13 @@
 
 (defmethod call ((this <clack-handler>) env)
   ;; (declare (ignore env))
-  (print (accesslog env))
-  '(200
-    (:content-type "text/plain")
-    ("hoge Hello, Clack!")))
+  ;; (print env)
+  (let ((request (make-request env)))
+    (print (get-port request))
+    (print (accesslog env))
+    '(200
+      (:content-type "text/plain")
+      ("hoge Hello, Clack!"))))
 
 (defun accesslog (env)
   (format nil "[~a] ~a ~a ~a"
@@ -34,3 +38,14 @@
                         time-zone)
       (get-decoded-time)
     (format nil "~d-~2,'0d-~2,'0d ~2,'0d:~2,'0d:~2,'0d" year month date hour minute second)))
+
+(defun make-request (env)
+  (make-instance '<clack-request>
+                 :environ env
+                 :path-info (getf env :PATH-INFO)
+                 :meta env))
+
+(defclass <clack-request> (<http-request>)
+ ((environ
+   :initarg :environ
+   :accessor environ)))

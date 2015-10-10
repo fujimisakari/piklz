@@ -23,10 +23,13 @@
                :cl-annot)
   :components ((:module "src"
                 :components
-                ((:file "piklz" :depends-on ("conf" "core/handlers" "core/management"))
+                ((:file "piklz" :depends-on ("conf" "http" "core/handlers" "core/management"))
                  (:module "conf"
                   :components
                   ((:file "init")))
+                 (:module "http"
+                  :components
+                  ((:file "request")))
                  (:module "core/handlers"
                   :components
                   ((:file "clack")))
