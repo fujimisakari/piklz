@@ -16,7 +16,7 @@
                                  (package-name (find-package "PIKLZ"))
                                  :keyword)
                                 "src/conf/global-settings.lisp"))
-         (local-settings-path (format nil "~a~a" *default-pathname-defaults* "setting.lisp"))
+         (local-settings-path (format nil "~a~a" *default-pathname-defaults* "settings.lisp"))
          (global-settings (load-setting global-settings-path))
          (local-settings (load-setting local-settings-path)))
     (loop for (key value) on local-settings by #'cddr

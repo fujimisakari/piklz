@@ -4,6 +4,11 @@
         :clack
         :clack.builder
         :piklz.http.request)
+  (:import-from :piklz.conf
+                :*settings*)
+  (:import-from :piklz.core.urlresolvers
+                :make-<regex-url-resolver>
+                :resolve)
   (:export :<clack-handler>))
 (in-package :piklz.core.handlers.clack)
 
@@ -13,8 +18,10 @@
   ;; (declare (ignore env))
   ;; (print env)
   (let ((request (make-request env)))
-    (print (get-port request))
+    (setq urlconf (make-<regex-url-resolver> "^/" (getf *settings* :root-urlconf)))
+    (resolve urlconf "/")
     (print (accesslog env))
+    ;; (funcall (intern "INDEX" "OTHERBU.ROOT.VIEWS"))))
     '(200
       (:content-type "text/plain")
       ("hoge Hello, Clack!"))))

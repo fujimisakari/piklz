@@ -20,17 +20,25 @@
                :clack-v1-compat
                :cl-ppcre
                :cl-fad
-               :cl-annot)
+               :cl-syntax-annot)
   :components ((:module "src"
                 :components
                 ((:file "piklz" :depends-on ("conf" "http" "core/handlers" "core/management"))
                  (:module "conf"
                   :components
                   ((:file "init")))
+                 (:module "conf/urls"
+                  :depends-on ("core")
+                  :components
+                  ((:file "init")))
                  (:module "http"
                   :components
                   ((:file "request")))
+                 (:module "core"
+                  :components
+                  ((:file "urlresolvers")))
                  (:module "core/handlers"
+                  :depends-on ("core" "conf")
                   :components
                   ((:file "clack")))
                  (:module "core/management"
