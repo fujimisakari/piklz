@@ -7,8 +7,10 @@
   (:import-from :piklz.conf
                 :*settings*)
   (:import-from :piklz.core.urlresolvers
-                :make-<regex-url-resolver>
-                :resolve)
+                :get-resolver
+                :resolve
+                :pkg-name
+                :func)
   (:export :<clack-handler>))
 (in-package :piklz.core.handlers.clack)
 
@@ -17,14 +19,19 @@
 (defmethod call ((this <clack-handler>) env)
   ;; (declare (ignore env))
   ;; (print env)
-  (let ((request (make-request env)))
-    (setq urlconf (make-<regex-url-resolver> "^/" (getf *settings* :root-urlconf)))
-    (resolve urlconf "/")
+  (let ((request (make-request env))
+        (urlconf (get-resolver (getf *settings* :root-urlconf)))
+        (resolver-match nil))
     (print (accesslog env))
-    ;; (funcall (intern "INDEX" "OTHERBU.ROOT.VIEWS"))))
-    '(200
-      (:content-type "text/plain")
-      ("hoge Hello, Clack!"))))
+    (setq resolver-match (resolve urlconf (getf env :PATH-INFO)))
+    (if resolver-match
+        (progn
+          (let ((pkg (find-package (string-upcase (pkg-name resolver-match))))
+                (func-name (string-upcase (func resolver-match))))
+            (funcall (intern func-name pkg))))
+        '(200
+          (:content-type "text/plain")
+          ("hoge Hello, Clack!")))))
 
 (defun accesslog (env)
   (format nil "[~a] ~a ~a ~a"

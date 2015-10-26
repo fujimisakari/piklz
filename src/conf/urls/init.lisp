@@ -6,7 +6,7 @@
                 :make-<regex-url-pattern>
                 :make-<regex-url-resolver>
                 :<regex-url-pattern>
-                :add-prefix)
+                :set-package)
   (:export :include
            :patterns
            :url))
@@ -16,13 +16,13 @@
   (let ((urlconf-pkg (find-package (string-upcase arg))))
     (list urlconf-pkg app-name namespace)))
 
-(defun patterns (prefix &rest args)
+(defun patterns (pkg-name &rest args)
   (loop with pattern-list = '()
         for x in args
         when (listp x)
           do (setq x (apply #'url x))
         when (typep x '<regex-url-pattern>)
-          do (add-prefix x prefix)
+          do (set-package x pkg-name)
         do (setq pattern-list (append pattern-list (list x)))
         finally (return pattern-list)))
 

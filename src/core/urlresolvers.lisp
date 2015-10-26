@@ -2,35 +2,21 @@
 (defpackage piklz.core.urlresolvers
   (:use :cl
         :cl-ppcre)
-  (:import-from :cl-fad
-                :file-exists-p)
-  (:export :setup
-           :*url-patern*
+  (:import-from :piklz.conf
+                :*settings*)
+  (:export :<regex-url-pattern>
            :make-<regex-url-pattern>
-           :make-<regex-url-resolver>))
+           :make-<regex-url-resolver>
+           :get-resolver
+           :resolve
+           :set-package
+           :pkg-name))
 (in-package :piklz.core.urlresolvers)
 
-(cl-syntax:use-syntax :annot)
-
-(defvar *url-patern* '())
-
-(defun setup (&optional (file-path "urls.lisp"))
-  (let* ((file-path (format nil "~a~a" *default-pathname-defaults* file-path))
-         (urls (load-urls file-path)))
-    (setq *url-patern* urls)))
-
-(defun load-urls (file-path)
-  (when (file-exists-p file-path)
-    (eval
-     (read-from-string
-      (slurp-file file-path)))))
-
-(defun slurp-file (path)
-  "Read a specified file and return the content as a sequence."
-  (with-open-file (stream path :direction :input)
-    (let ((seq (make-array (file-length stream) :element-type 'character :fill-pointer t)))
-      (setf (fill-pointer seq) (read-sequence seq stream))
-      seq)))
+(defun get-resolver (&optional (urlconf nil))
+  (if urlconf
+      (make-<regex-url-resolver> "^/" urlconf)
+      (make-<regex-url-resolver> "^/" (getf *settings* :root-urlconf))))
 
 (defclass <locale-regex-provider> ()
   ((regex
@@ -58,40 +44,50 @@
     :accessor app-name)
    (namespaces
     :initarg :namespaces
-    :accessor namespaces)))
+    :accessor namespaces)
+   (pkg-name
+    :initarg :pkg-name
+    :accessor pkg-name)))
 
-(defun make-<resolver-match> (func args kwargs &optional (url-name nil) (app-name nil) (namespaces nil))
-  (make-instance '<resolver-match> :regex regex
+(defun make-<resolver-match> (pkg-name func args kwargs &optional (url-name nil) (app-name nil) (namespaces nil))
+  (make-instance '<resolver-match> :pkg-name pkg-name
+                                   :func func
                                    :args args
                                    :kwargs kwargs
                                    :url-name url-name
                                    :app-name app-name
                                    :namespaces namespaces))
 
-@export
 (defclass <regex-url-pattern> (<locale-regex-provider>)
-  ((callback
-    :initarg :callback
-    :accessor callback)
+  ((callback-view
+    :initarg :callback-view
+    :accessor callback-view)
    (default-args
     :initarg :default-args
     :accessor default-args)
    (name
     :initarg :name
-    :accessor name)))
+    :accessor name)
+   (pkg-name
+    :accessor pkg-name)))
 
 (defun make-<regex-url-pattern> (regex callback &optional (default-args nil) (name nil))
   (make-instance '<regex-url-pattern> :regex regex
-                                      :callback callback
+                                      :callback-view callback
                                       :default-args default-args
                                       :name name))
 
-@export
-(defmethod add-prefix ((this <regex-url-pattern>) prefix)
-  (let ((new-prefix (concatenate 'string prefix "." (callback this))))
-    (setf (callback this) new-prefix)))
+(defmethod set-package ((this <regex-url-pattern>) pkg-name)
+  (setf (pkg-name this) pkg-name))
+  ;; (let ((new-prefix (concatenate 'string prefix "." (callback-view this))))
+  ;;   (setf (callback-view this) new-prefix)))
 
-(defmethod resolve ((this <regex-url-pattern>) path))
+(defmethod resolve ((this <regex-url-pattern>) path)
+  (multiple-value-bind (match-start match-end)
+      (regex-search this path)
+    (if (and match-start match-end)
+        (progn
+          (make-<resolver-match> (pkg-name this) (callback-view this) '() '() (name this))))))
 
 (defmethod callback ((this <regex-url-pattern>)))
 
@@ -133,7 +129,6 @@
     :initarg :namespace
     :accessor namespace)))
 
-@export
 (defun make-<regex-url-resolver> (regex urlconf-name &optional (app-name nil) (namespace nil))
   (make-instance '<regex-url-resolver> :regex regex
                                        :urlconf-name urlconf-name
@@ -155,9 +150,18 @@
 ;;         self._app_dict = {}
 ;; ))
 
-@export
 (defmethod resolve ((this <regex-url-resolver>) path)
-  (print (url-patterns this)))
+  (multiple-value-bind (match-start match-end)
+      (regex-search this path)
+    (if (and match-start match-end)
+        (progn
+          (let ((paterns (url-patterns this))
+                (new-path (subseq path match-end (length path))))
+            (loop with sub-match = nil
+                  for patern in paterns
+                  do (setq sub-match (resolve patern new-path))
+                  (if (typep sub-match '<resolver-match>)
+                      (return sub-match))))))))
 
 ;;     def resolve(self, path):
 ;;         tried = []
@@ -184,25 +188,10 @@
 ;;             raise Resolver404({'tried': tried, 'path': new_path})
 ;;         raise Resolver404({'path' : path})
 
-(defmethod urlconf-module ((this <regex-url-resolver>))
-  (find-package (string-upcase (urlconf-name this))))
+(defmethod urlconf-package ((this <regex-url-resolver>))
+  (if (typep (urlconf-name this) 'string)
+      (find-package (string-upcase (urlconf-name this)))
+      (urlconf-name this)))
 
 (defmethod url-patterns ((this <regex-url-resolver>))
-  (symbol-value (intern "*URLPATTERNS*" (urlconf-module this))))
-
-    ;; @property
-    ;; def urlconf_module(self):
-    ;;     try:
-    ;;         return self._urlconf_module
-    ;;     except AttributeError:
-    ;;         self._urlconf_module = import_module(self.urlconf_name)
-    ;;         return self._urlconf_module
-
-    ;; @property
-    ;; def url_patterns(self):
-    ;;     patterns = getattr(self.urlconf_module, "urlpatterns", self.urlconf_module)
-    ;;     try:
-    ;;         iter(patterns)
-    ;;     except TypeError:
-    ;;         raise ImproperlyConfigured("The included urlconf %s doesn't have any patterns in it" % self.urlconf_name)
-    ;;     return patterns
+  (symbol-value (intern "*URLPATTERNS*" (urlconf-package this))))
