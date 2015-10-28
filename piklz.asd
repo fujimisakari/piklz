@@ -40,7 +40,8 @@
                  (:module "core/handlers"
                   :depends-on ("core" "conf")
                   :components
-                  ((:file "clack")))
+                  ((:file "base")
+                   (:file "clack" :depends-on ("base"))))
                  (:module "core/management"
                   :components
                   ((:file "init" :depends-on ("base"))

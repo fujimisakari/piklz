@@ -2,6 +2,14 @@
 (defpackage piklz.http.request
   (:use :cl)
   (:export :<http-request>
+           :get-data
+           :post-data
+           :cookies
+           :meta
+           :files
+           :path
+           :method-type
+           :resolver-match
            :get-port))
 (in-package :piklz.http.request)
 

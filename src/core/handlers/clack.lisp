@@ -6,6 +6,9 @@
         :piklz.http.request)
   (:import-from :piklz.conf
                 :*settings*)
+  (:import-from :piklz.core.handlers.base
+                :<base-handler>
+                :get-response)
   (:import-from :piklz.core.urlresolvers
                 :get-resolver
                 :resolve
@@ -14,30 +17,20 @@
   (:export :<clack-handler>))
 (in-package :piklz.core.handlers.clack)
 
-(defclass <clack-handler> (<component>) ())
+(defclass <clack-handler> (<base-handler>) ())
 
 (defmethod call ((this <clack-handler>) env)
   ;; (declare (ignore env))
   ;; (print env)
-  (let ((request (make-request env))
-        (urlconf (get-resolver (getf *settings* :root-urlconf)))
-        (resolver-match nil))
+  (let ((request (make-request env)))
     (print (accesslog env))
-    (setq resolver-match (resolve urlconf (getf env :PATH-INFO)))
-    (if resolver-match
-        (progn
-          (let ((pkg (find-package (string-upcase (pkg-name resolver-match))))
-                (func-name (string-upcase (func resolver-match))))
-            (funcall (intern func-name pkg))))
-        '(200
-          (:content-type "text/plain")
-          ("hoge Hello, Clack!")))))
+    (get-response this request)))
 
 (defun accesslog (env)
   (format nil "[~a] ~a ~a ~a"
           (today-time)
           (getf env :REQUEST-METHOD)
-          (getf env :PATH-INFO)
+          (getf env :REQUEST-URI)
           (getf env :SERVER-PROTOCOL)))
 
 (defun today-time ()
@@ -57,7 +50,8 @@
   (make-instance '<clack-request>
                  :environ env
                  :path-info (getf env :PATH-INFO)
-                 :meta env))
+                 :meta env
+                 :method-type (getf env :REQUEST-METHOD)))
 
 (defclass <clack-request> (<http-request>)
  ((environ
