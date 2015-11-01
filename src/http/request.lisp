@@ -8,6 +8,7 @@
            :meta
            :files
            :path
+           :path-info
            :method-type
            :resolver-match
            :get-port))

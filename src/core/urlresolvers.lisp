@@ -1,7 +1,13 @@
 (in-package :cl-user)
 (defpackage piklz.core.urlresolvers
-  (:use :cl
-        :cl-ppcre)
+  (:use :cl)
+  (:import-from :cl-ppcre
+                :scan
+                :create-scanner
+                :scan-to-strings
+                :*allow-named-registers*)
+  (:import-from :alexandria
+                :make-keyword)
   (:import-from :piklz.conf
                 :*settings*)
   (:export :<regex-url-pattern>
@@ -24,7 +30,7 @@
     :accessor regex)))
 
 (defmethod regex-search ((this <locale-regex-provider>) path)
-  (cl-ppcre:scan (regex this) path))
+  (scan (regex this) path))
 
 (defclass <resolver-match> ()
   ((func
@@ -83,37 +89,34 @@
   ;;   (setf (callback-view this) new-prefix)))
 
 (defmethod resolve ((this <regex-url-pattern>) path)
-  (multiple-value-bind (match-start match-end)
-      (regex-search this path)
-    (if (and match-start match-end)
-        (progn
-          (make-<resolver-match> (pkg-name this) (callback-view this) '() '() (name this))))))
+  (let* ((*allow-named-registers* t))
+    (multiple-value-bind (match-start match-end)
+        (regex-search this path)
+      (if (and match-start match-end)
+          (progn
+            (multiple-value-bind (re kw)
+                (create-scanner (regex this))
+              (let ((params (nth-value 1 (scan-to-strings re path)))
+                    (args '())
+                    (kwargs '()))
+                (if (= (length params) (length kw))
+                    (progn
+                      (dotimes (idx (length params))
+                        (if (nth idx kw)
+                            (setq kwargs (append kwargs (list (make-keyword (string-upcase (nth idx kw))) (elt params idx))))
+                            (setq args (append args (list (elt params idx))))))
+                      (make-<resolver-match> (pkg-name this) (callback-view this) args kwargs (name this)))
+                    (print "errr")))))))))
 
 (defmethod callback ((this <regex-url-pattern>)))
 
-    ;; def resolve(self, path):
-    ;;     match = self.regex.search(path)
-    ;;     if match:
-    ;;         # If there are any named groups, use those as kwargs, ignoring
-    ;;         # non-named groups. Otherwise, pass all non-named arguments as
-    ;;         # positional arguments.
-    ;;         kwargs = match.groupdict()
-    ;;         if kwargs:
-    ;;             args = ()
-    ;;         else:
-    ;;             args = match.groups()
-    ;;         # In both cases, pass any extra_kwargs as **kwargs.
-    ;;         kwargs.update(self.default_args)
+;; @property
+;; def callback(self):
+;;     if self._callback is not None:
+;;         return self._callback
 
-    ;;         return ResolverMatch(self.callback, args, kwargs, self.name)
-
-    ;; @property
-    ;; def callback(self):
-    ;;     if self._callback is not None:
-    ;;         return self._callback
-
-    ;;     self._callback = get_callable(self._callback_str)
-    ;;     return self._callback
+;;     self._callback = get_callable(self._callback_str)
+;;     return self._callback
 
 (defclass <regex-url-resolver> (<locale-regex-provider>)
   ((urlconf-name

@@ -10,7 +10,9 @@
                 :get-resolver
                 :resolve
                 :pkg-name
-                :func)
+                :func
+                :args
+                :kwargs)
   (:export :<base-handler>
            :get-response))
 (in-package :piklz.core.handlers.base)
@@ -28,14 +30,14 @@
     :initarg :template-response-middleware
     :initform nil
     :accessor template-response-middleware)
-   (response_middleware
-    :initarg :response_middleware
+   (response-middleware
+    :initarg :response-middleware
     :initform nil
-    :accessor response_middleware)
-   (exception_middleware
-    :initarg :exception_middleware
+    :accessor response-middleware)
+   (exception-middleware
+    :initarg :exception-middleware
     :initform nil
-    :accessor exception_middleware)))
+    :accessor exception-middleware)))
 
 (defmethod get-response ((this <base-handler>) request)
   (let ((urlconf (get-resolver (getf *settings* :root-urlconf)))
@@ -44,8 +46,9 @@
     (if resolver-match
         (progn
           (let ((pkg (find-package (string-upcase (pkg-name resolver-match))))
-                (func-name (string-upcase (func resolver-match))))
-            (funcall (intern func-name pkg) request)))
+                (func-name (string-upcase (func resolver-match)))
+                (args (append '(request) (args resolver-match) (kwargs resolver-match))))
+            (apply (intern func-name pkg) args)))
         '(200
           (:content-type "text/plain")
           ("hoge Hello, Clack!")))))
