@@ -13,9 +13,9 @@
 (in-package :piklz-asd)
 
 (defsystem piklz
-  :version "0.1"
+  :version "0.0.3"
   :author "fujimisakari"
-  :license "LLGPL"
+  :license "BSD"
   :depends-on (:bordeaux-threads
                :alexandria
                :clack-v1-compat
