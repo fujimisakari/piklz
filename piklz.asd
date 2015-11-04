@@ -1,10 +1,7 @@
 #|
   This file is a part of piklz project.
-  Copyright (c) 2015 fujimisakari (fujimisakari@gmail.com)
-|#
-
-#|
-  Author: fujimisakari (fujimisakari@gmail.com)
+  URL: http://github.com/fujimisakari/piklz
+  Copyright (c) 2015 Ryo Fujimoto (fujimisakari@gmail.com)
 |#
 
 (in-package :cl-user)
@@ -14,7 +11,8 @@
 
 (defsystem piklz
   :version "0.0.3"
-  :author "fujimisakari"
+  :description "Web application framework like Django"
+  :author "Ryo Fujimoto"
   :license "BSD"
   :depends-on (:bordeaux-threads
                :alexandria
@@ -51,10 +49,9 @@
                    (:file "commands/runserver" :depends-on ("base"))
                    (:file "commands/startapp" :depends-on ("templates"))
                    (:file "commands/startproject" :depends-on ("templates")))))))
-  :description ""
   :long-description
   #.(with-open-file (stream (merge-pathnames
-                             #p"README.markdown"
+                             #p"README.md"
                              (or *load-pathname* *compile-file-pathname*))
                             :if-does-not-exist nil
                             :direction :input)
