@@ -7,8 +7,10 @@
 
 ;; NOTE: To run this test file, execute `(asdf:test-system :piklz)' in your Lisp.
 
-(plan nil)
+(plan 3)
 
-;; blah blah blah.
+(ok (not (find 4 '(1 2 3))))
+(is 4 4)
+(isnt 1 #\1)
 
 (finalize)

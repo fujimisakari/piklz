@@ -1,6 +1,7 @@
 #|
   This file is a part of piklz project.
-  Copyright (c) 2015 fujimisakari (fujimisakari@gmail.com)
+  URL: http://github.com/fujimisakari/piklz
+  Copyright (c) 2015 Ryo Fujimoto (fujimisakari@gmail.com)
 |#
 
 (in-package :cl-user)
@@ -9,8 +10,8 @@
 (in-package :piklz-test-asd)
 
 (defsystem piklz-test
-  :author "fujimisakari"
-  :license "LLGPL"
+  :author "Ryo Fujimoto"
+  :license "BSD"
   :depends-on (:piklz
                :prove)
   :components ((:module "t"
