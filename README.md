@@ -1,5 +1,7 @@
 # Piklz
 
+[![Build Status](https://travis-ci.org/fujimisakari/piklz.svg?branch=master)](https://travis-ci.org/fujimisakari/piklz)
+
 ## Introduction
 
 Web application framework like Django(Python Web application framework)
