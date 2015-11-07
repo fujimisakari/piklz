@@ -1,5 +1,4 @@
 language: common-lisp
-sudo: false
 
 os:
   - linux
